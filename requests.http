@@ -1,0 +1,62 @@
+# REST Client requests for golang-api-ecommerce API
+#
+# Configure environment in rest-client.env.json (Local -> baseUrl)
+
+@baseUrl = http://localhost:8080
+
+# List products
+GET {{baseUrl}}/products
+Accept: application/json
+
+###
+
+# Create product
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Camiseta Golang",
+  "price": 49.9,
+  "stock": 10
+}
+
+###
+
+# Get product by ID
+GET {{baseUrl}}/products/1
+Accept: application/json
+
+###
+
+# Update product
+PUT {{baseUrl}}/products/1
+Content-Type: application/json
+
+{
+  "name": "Camiseta Golang - Edição 2026",
+  "price": 59.9,
+  "stock": 20
+}
+
+###
+
+# Delete product
+DELETE {{baseUrl}}/products/1
+
+###
+
+# Create invalid product (esperado: 400 Bad Request)
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "",
+  "price": -1,
+  "stock": -5
+}
+
+###
+
+# Get non-existent product (esperado: 404 Not Found)
+GET {{baseUrl}}/products/9999
+Accept: application/json
