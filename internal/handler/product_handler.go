@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"log"
 
 	"github.com/edupooter/golang-api-ecommerce/internal/model"
 	"github.com/edupooter/golang-api-ecommerce/internal/repo"
@@ -85,7 +86,14 @@ func (h *ProductHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	// expose created id in Location and a custom header to help REST clients extract it
+	loc := "/products/" + strconv.FormatInt(created.ID, 10)
+	idstr := strconv.FormatInt(created.ID, 10)
+	w.Header().Set("Location", loc)
+	w.Header().Set("X-Resource-ID", idstr)
 	w.WriteHeader(http.StatusCreated)
+	// log headers for debugging
+	log.Printf("created product id=%s, Location=%s, X-Resource-ID=%s", idstr, loc, idstr)
 	_ = json.NewEncoder(w).Encode(created)
 }
 

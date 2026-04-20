@@ -32,6 +32,23 @@ func NewSQLiteRepo(dsn string) (*SQLiteRepo, error) {
         db.Close()
         return nil, fmt.Errorf("create schema: %w", err)
     }
+    // seed initial data if table empty
+    var cnt int
+    if err := db.QueryRow("SELECT COUNT(1) FROM products").Scan(&cnt); err == nil {
+        if cnt == 0 {
+            seed := []struct{
+                name string
+                price float64
+                stock int
+            }{
+                {"Camiseta Golang", 49.9, 10},
+                {"Caneca Go", 19.9, 25},
+            }
+            for _, s := range seed {
+                _, _ = db.Exec("INSERT INTO products(name, price, stock) VALUES(?, ?, ?)", s.name, s.price, s.stock)
+            }
+        }
+    }
     return &SQLiteRepo{db: db}, nil
 }
 

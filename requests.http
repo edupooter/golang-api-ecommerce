@@ -22,6 +22,19 @@ Content-Type: application/json
 
 ###
 
+# After sending the Create request above, REST Client exposes response headers.
+# You can reference the created id from the response header `X-Resource-ID` in subsequent requests like below.
+# Example: use `{{response.header.X-Resource-ID}}` as id placeholder.
+
+###
+
+# Get product by created id (dynamic) — tenta header primeiro, depois body.id como fallback
+# Use: {{response.header.X-Resource-ID}} ou {{response.body.id}}
+GET {{baseUrl}}/products/{{response.header.X-Resource-ID}}{{response.body.id}}
+Accept: application/json
+
+###
+
 # Get product by ID
 GET {{baseUrl}}/products/1
 Accept: application/json
