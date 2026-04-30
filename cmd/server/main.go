@@ -1,3 +1,9 @@
+// @title Golang API E-commerce
+// @version 1.0
+// @description API simples de e-commerce
+// @host localhost:8080
+// @BasePath /
+// @schemes http
 package main
 
 import (
