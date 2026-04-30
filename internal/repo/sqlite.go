@@ -5,6 +5,7 @@ import (
     "fmt"
 
     "github.com/edupooter/golang-api-ecommerce/internal/model"
+    "github.com/edupooter/golang-api-ecommerce/internal/ports"
     _ "modernc.org/sqlite"
 )
 
@@ -133,4 +134,32 @@ func (r *SQLiteRepo) Delete(id int64) error {
         return ErrNotFound
     }
     return nil
+}
+
+// DecrementStock performs a conditional update to avoid negative stock.
+func (r *SQLiteRepo) DecrementStock(id int64, qty int) error {
+    if qty <= 0 {
+        return nil
+    }
+    res, err := r.db.Exec("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?", qty, id, qty)
+    if err != nil {
+        return err
+    }
+    n, err := res.RowsAffected()
+    if err != nil {
+        return err
+    }
+    if n == 0 {
+        return ports.ErrInsufficientStock
+    }
+    return nil
+}
+
+// IncrementStock increases stock (used for compensation)
+func (r *SQLiteRepo) IncrementStock(id int64, qty int) error {
+    if qty <= 0 {
+        return nil
+    }
+    _, err := r.db.Exec("UPDATE products SET stock = stock + ? WHERE id = ?", qty, id)
+    return err
 }

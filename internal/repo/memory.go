@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/edupooter/golang-api-ecommerce/internal/model"
+	"github.com/edupooter/golang-api-ecommerce/internal/ports"
 )
 
 var ErrNotFound = errors.New("product not found")
@@ -74,5 +75,38 @@ func (r *InMemoryRepo) Delete(id int64) error {
 		return ErrNotFound
 	}
 	delete(r.data, id)
+	return nil
+}
+
+// DecrementStock decrements stock if enough quantity exists.
+func (r *InMemoryRepo) DecrementStock(id int64, qty int) error {
+	if qty <= 0 {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	p, ok := r.data[id]
+	if !ok {
+		return ErrNotFound
+	}
+	if p.Stock < qty {
+		return ports.ErrInsufficientStock
+	}
+	p.Stock -= qty
+	return nil
+}
+
+// IncrementStock increases stock (used for compensation)
+func (r *InMemoryRepo) IncrementStock(id int64, qty int) error {
+	if qty <= 0 {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	p, ok := r.data[id]
+	if !ok {
+		return ErrNotFound
+	}
+	p.Stock += qty
 	return nil
 }
