@@ -1,14 +1,79 @@
 basePath: /
 definitions:
+  handler.checkoutRequest:
+    properties:
+      cart:
+        $ref: '#/definitions/model.Cart'
+      customer_id:
+        type: integer
+    type: object
+  model.Cart:
+    properties:
+      id:
+        example: cart-123
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/model.CartItem'
+        type: array
+    type: object
+  model.CartItem:
+    properties:
+      product_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        type: integer
+    type: object
+  model.ErrorResponse:
+    properties:
+      message:
+        description: Message short human-readable error message
+        example: resource not found
+        type: string
+    type: object
+  model.Order:
+    properties:
+      customer_id:
+        example: 1
+        type: integer
+      id:
+        example: 1
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.OrderItem'
+        type: array
+      total:
+        example: 119.7
+        type: number
+    type: object
+  model.OrderItem:
+    properties:
+      price:
+        example: 49.9
+        type: number
+      product_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        type: integer
+    type: object
   model.Product:
     properties:
       id:
+        example: 1
         type: integer
       name:
+        example: Camiseta Golang
         type: string
       price:
+        example: 49.9
         type: number
       stock:
+        example: 10
         type: integer
     type: object
 host: localhost:8080
@@ -18,8 +83,51 @@ info:
   title: Golang API E-commerce
   version: "1.0"
 paths:
+  /checkout:
+    post:
+      consumes:
+      - application/json
+      description: Decrements stock and creates an order for the given customer and
+        cart
+      parameters:
+      - description: checkout payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.checkoutRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              description: Location of created order
+              type: string
+            X-Order-ID:
+              description: Created order id
+              type: string
+          schema:
+            $ref: '#/definitions/model.Order'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Checkout cart and create order
+      tags:
+      - checkout
   /products:
     get:
+      description: Returns all available products with current stock and price information.
       produces:
       - application/json
       responses:
@@ -32,15 +140,15 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
       summary: List products
       tags:
       - products
     post:
       consumes:
       - application/json
+      description: Create a new product. Returns created product and sets `Location`
+        and `X-Resource-ID` headers.
       parameters:
       - description: product
         in: body
@@ -53,25 +161,29 @@ paths:
       responses:
         "201":
           description: Created
+          headers:
+            Location:
+              description: Location of created resource
+              type: string
+            X-Resource-ID:
+              description: Created resource id
+              type: string
           schema:
             $ref: '#/definitions/model.Product'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
       summary: Create a product
       tags:
       - products
   /products/{id}:
     delete:
+      description: Deletes a product identified by ID. Returns 204 on success.
       parameters:
       - description: Product ID
         in: path
@@ -86,19 +198,17 @@ paths:
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
       summary: Delete a product
       tags:
       - products
     get:
+      description: Retrieve a single product by its ID. Returns 404 when product is
+        not found.
       parameters:
       - description: Product ID
         in: path
@@ -115,21 +225,18 @@ paths:
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
       summary: Get a product by ID
       tags:
       - products
     put:
       consumes:
       - application/json
+      description: Update an existing product. Returns 404 if product does not exist.
       parameters:
       - description: Product ID
         in: path
@@ -152,21 +259,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/model.ErrorResponse'
       summary: Update a product
       tags:
       - products

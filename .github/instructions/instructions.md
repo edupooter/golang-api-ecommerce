@@ -27,7 +27,7 @@ go run ./cmd/server
 - Rodar servidor com SQLite (PowerShell):
 
 ```powershell
-$env:SQLITE_PATH = 'products.db'
+$env:SQLITE_PATH = 'data.db'
 go run ./cmd/server
 ```
 

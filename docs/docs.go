@@ -15,8 +15,71 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/checkout": {
+            "post": {
+                "description": "Decrements stock and creates an order for the given customer and cart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checkout"
+                ],
+                "summary": "Checkout cart and create order",
+                "parameters": [
+                    {
+                        "description": "checkout payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.checkoutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Order"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "Location of created order"
+                            },
+                            "X-Order-ID": {
+                                "type": "string",
+                                "description": "Created order id"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "get": {
+                "description": "Returns all available products with current stock and price information.",
                 "produces": [
                     "application/json"
                 ],
@@ -37,15 +100,13 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
             },
             "post": {
+                "description": "Create a new product. Returns created product and sets ` + "`" + `Location` + "`" + ` and ` + "`" + `X-Resource-ID` + "`" + ` headers.",
                 "consumes": [
                     "application/json"
                 ],
@@ -72,24 +133,28 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.Product"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string",
+                                "description": "Location of created resource"
+                            },
+                            "X-Resource-ID": {
+                                "type": "string",
+                                "description": "Created resource id"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
@@ -97,6 +162,7 @@ const docTemplate = `{
         },
         "/products/{id}": {
             "get": {
+                "description": "Retrieve a single product by its ID. Returns 404 when product is not found.",
                 "produces": [
                     "application/json"
                 ],
@@ -123,24 +189,19 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
+                "description": "Update an existing product. Returns 404 if product does not exist.",
                 "consumes": [
                     "application/json"
                 ],
@@ -179,33 +240,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
             },
             "delete": {
+                "description": "Deletes a product identified by ID. Returns 204 on success.",
                 "tags": [
                     "products"
                 ],
@@ -229,19 +282,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/model.ErrorResponse"
                         }
                     }
                 }
@@ -249,20 +296,113 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handler.checkoutRequest": {
+            "type": "object",
+            "properties": {
+                "cart": {
+                    "$ref": "#/definitions/model.Cart"
+                },
+                "customer_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Cart": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "cart-123"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CartItem"
+                    }
+                }
+            }
+        },
+        "model.CartItem": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Message short human-readable error message",
+                    "type": "string",
+                    "example": "resource not found"
+                }
+            }
+        },
+        "model.Order": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.OrderItem"
+                    }
+                },
+                "total": {
+                    "type": "number",
+                    "example": 119.7
+                }
+            }
+        },
+        "model.OrderItem": {
+            "type": "object",
+            "properties": {
+                "price": {
+                    "type": "number",
+                    "example": 49.9
+                },
+                "product_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
         "model.Product": {
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Camiseta Golang"
                 },
                 "price": {
-                    "type": "number"
+                    "type": "number",
+                    "example": 49.9
                 },
                 "stock": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10
                 }
             }
         }

@@ -12,14 +12,18 @@ import (
 	"os"
 
 	"github.com/edupooter/golang-api-ecommerce/internal/handler"
+	"github.com/edupooter/golang-api-ecommerce/internal/ports"
 	"github.com/edupooter/golang-api-ecommerce/internal/repo"
 	"github.com/edupooter/golang-api-ecommerce/internal/server"
 	"github.com/edupooter/golang-api-ecommerce/internal/service"
 )
 
 func main() {
-	var rRepo repo.ProductRepository
-	// if SQLITE_PATH is set, use SQLite-backed repository, otherwise in-memory
+	var prodRepo repo.ProductRepository
+	var orderRepo interface{}
+	var custRepo interface{}
+
+	// if SQLITE_PATH is set, use SQLite-backed repositories, otherwise in-memory
 	if path := os.Getenv("SQLITE_PATH"); path != "" {
 		srepo, err := repo.NewSQLiteRepo(path)
 		if err != nil {
@@ -30,14 +34,60 @@ func main() {
 				log.Printf("error closing sqlite db: %v", err)
 			}
 		}()
-		rRepo = srepo
+		prodRepo = srepo
+
+		or, err := repo.NewSQLiteOrderRepo(path)
+		if err != nil {
+			log.Fatalf("failed to open sqlite order repo (%s): %v", path, err)
+		}
+		defer or.Close()
+		orderRepo = or
+
+		cr, err := repo.NewSQLiteCustomerRepo(path)
+		if err != nil {
+			log.Fatalf("failed to open sqlite customer repo (%s): %v", path, err)
+		}
+		defer cr.Close()
+		custRepo = cr
 	} else {
-		rRepo = repo.NewInMemoryRepo()
+		prod := repo.NewInMemoryRepo()
+		prodRepo = prod
+		orderRepo = repo.NewInMemoryOrderRepo()
+		custRepo = repo.NewInMemoryCustomerRepo()
 	}
 
-	s := service.NewProductService(rRepo)
-	h := handler.NewProductHandler(s)
-	router := server.NewRouter(h)
+	psvc := service.NewProductService(prodRepo)
+	ph := handler.NewProductHandler(psvc)
+
+	// build OrderService using concrete adapters (type assertions)
+	var stock ports.StockRepository
+	var or ports.OrderRepository
+	var cr ports.CustomerRepository
+
+	// stock repo is implemented by product repo implementations
+	switch v := prodRepo.(type) {
+	case *repo.InMemoryRepo:
+		stock = v
+	case *repo.SQLiteRepo:
+		stock = v
+	}
+	switch v := orderRepo.(type) {
+	case *repo.InMemoryOrderRepo:
+		or = v
+	case *repo.SQLiteOrderRepo:
+		or = v
+	}
+	switch v := custRepo.(type) {
+	case *repo.InMemoryCustomerRepo:
+		cr = v
+	case *repo.SQLiteCustomerRepo:
+		cr = v
+	}
+
+	osvc := service.NewOrderService(stock, or, cr)
+	ch := handler.NewCheckoutHandler(osvc)
+
+	router := server.NewRouterWithCheckout(ph, ch)
 
 	srv := &http.Server{
 		Addr:    ":8080",

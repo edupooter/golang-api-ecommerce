@@ -29,8 +29,8 @@ Content-Type: application/json
 ###
 
 # Get product by created id (dynamic) — tenta header primeiro, depois body.id como fallback
-# Use: {{response.header.X-Resource-ID}} ou {{response.body.id}}
-GET {{baseUrl}}/products/{{response.header.X-Resource-ID}}{{response.body.id}}
+# Use: {{$response.headers['X-Resource-ID'] || $response.body.id}}
+GET {{baseUrl}}/products/{{$response.headers['X-Resource-ID'] || $response.body.id}}
 Accept: application/json
 
 ###
@@ -73,3 +73,51 @@ Content-Type: application/json
 # Get non-existent product (esperado: 404 Not Found)
 GET {{baseUrl}}/products/9999
 Accept: application/json
+
+###
+
+# Checkout example (usa o produto criado anteriormente)
+POST {{baseUrl}}/checkout
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "cart": {
+    "items": [
+      {
+        "product_id": {{$response.headers['X-Resource-ID'] || $response.body.id}},
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+###
+
+# Checkout (esperado: 409 Conflict quando estoque insuficiente)
+POST {{baseUrl}}/checkout
+Content-Type: application/json
+
+{
+  "customer_id": 1,
+  "cart": {
+    "items": [
+      {
+        "product_id": {{$response.headers['X-Resource-ID'] || $response.body.id}},
+        "quantity": 999
+      }
+    ]
+  }
+}
+
+###
+
+# Swagger - especificação OpenAPI (JSON)
+GET {{baseUrl}}/swagger/doc.json
+Accept: application/json
+
+###
+
+# Swagger UI (HTML)
+GET {{baseUrl}}/swagger/
+Accept: text/html

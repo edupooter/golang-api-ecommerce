@@ -21,21 +21,21 @@ Suporte a SQLite
 - Para usar SQLite defina a variável de ambiente `SQLITE_PATH` apontando para o arquivo do banco (será criado se não existir). Exemplo PowerShell:
 
 ```powershell
-$env:SQLITE_PATH = 'products.db'
+$env:SQLITE_PATH = 'data.db'
 go run ./cmd/server
 ```
 
 - CMD:
 
 ```cmd
-set SQLITE_PATH=products.db
+set SQLITE_PATH=data.db
 go run ./cmd/server
 ```
 
 - Bash:
 
 ```bash
-export SQLITE_PATH=products.db
+export SQLITE_PATH=data.db
 go run ./cmd/server
 ```
 
@@ -58,5 +58,10 @@ Incluí um conjunto de requisições para a extensão REST Client e um arquivo d
 Notas
 
 - O driver SQLite usado é `modernc.org/sqlite` (implementação pura em Go), a dependência já foi adicionada ao módulo e o projeto buildou com sucesso.
-- O arquivo do banco (`products.db`) será criado no diretório onde o servidor for executado.
+- O arquivo do banco (`data.db`) será criado no diretório onde o servidor for executado.
+
+Swagger UI
+-----------
+- A API serve a especificação OpenAPI em `/swagger/doc.json` e a UI via `/swagger/`.
+- Em produção, a URL usada pelo Swagger UI pode ser configurada via variável de ambiente `SWAGGER_URL` apontando para a URL pública do `doc.json` (ex.: `https://api.exemplo.com/swagger/doc.json`). O servidor usa `http://localhost:8080/swagger/doc.json` por padrão quando `SWAGGER_URL` não estiver definida.
 

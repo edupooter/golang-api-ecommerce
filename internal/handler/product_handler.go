@@ -57,10 +57,11 @@ func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Reques
 
 // ListProducts godoc
 // @Summary List products
+// @Description Returns all available products with current stock and price information.
 // @Tags products
 // @Produce json
 // @Success 200 {array} model.Product
-// @Failure 500 {object} map[string]string
+// @Failure 500 {object} model.ErrorResponse
 // @Router /products [get]
 func (h *ProductHandler) list(w http.ResponseWriter) {
 	prods, err := h.svc.ListProducts()
@@ -74,13 +75,16 @@ func (h *ProductHandler) list(w http.ResponseWriter) {
 
 // CreateProduct godoc
 // @Summary Create a product
+// @Description Create a new product. Returns created product and sets `Location` and `X-Resource-ID` headers.
 // @Tags products
 // @Accept json
 // @Produce json
 // @Param product body model.Product true "product"
 // @Success 201 {object} model.Product
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Header 201 {string} Location "Location of created resource"
+// @Header 201 {string} X-Resource-ID "Created resource id"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /products [post]
 func (h *ProductHandler) create(w http.ResponseWriter, r *http.Request) {
 	var p model.Product
@@ -116,12 +120,13 @@ func (h *ProductHandler) create(w http.ResponseWriter, r *http.Request) {
 
 // GetProduct godoc
 // @Summary Get a product by ID
+// @Description Retrieve a single product by its ID. Returns 404 when product is not found.
 // @Tags products
 // @Produce json
 // @Param id path int true "Product ID"
 // @Success 200 {object} model.Product
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /products/{id} [get]
 func (h *ProductHandler) get(w http.ResponseWriter, id int64) {
 	p, err := h.svc.GetProduct(id)
@@ -139,15 +144,16 @@ func (h *ProductHandler) get(w http.ResponseWriter, id int64) {
 
 // UpdateProduct godoc
 // @Summary Update a product
+// @Description Update an existing product. Returns 404 if product does not exist.
 // @Tags products
 // @Accept json
 // @Produce json
 // @Param id path int true "Product ID"
 // @Param product body model.Product true "product"
 // @Success 200 {object} model.Product
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /products/{id} [put]
 func (h *ProductHandler) update(w http.ResponseWriter, r *http.Request, id int64) {
 	var p model.Product
@@ -180,11 +186,12 @@ func (h *ProductHandler) update(w http.ResponseWriter, r *http.Request, id int64
 
 // DeleteProduct godoc
 // @Summary Delete a product
+// @Description Deletes a product identified by ID. Returns 204 on success.
 // @Tags products
 // @Param id path int true "Product ID"
 // @Success 204 {string} string "No Content"
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
 // @Router /products/{id} [delete]
 func (h *ProductHandler) delete(w http.ResponseWriter, id int64) {
 	if err := h.svc.DeleteProduct(id); err != nil {

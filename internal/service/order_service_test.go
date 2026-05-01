@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"github.com/edupooter/golang-api-ecommerce/internal/model"
 	"github.com/edupooter/golang-api-ecommerce/internal/ports"
 	"github.com/edupooter/golang-api-ecommerce/internal/repo"
+	"github.com/edupooter/golang-api-ecommerce/internal/service"
 )
 
 // mockStockRepo implements ports.StockRepository for unit tests
@@ -78,7 +79,7 @@ func TestOrderService_Checkout_Success(t *testing.T) {
 	ms := &mockStockRepo{}
 	mo := &mockOrderRepo{}
 	mc := &mockCustomerRepo{exists: true}
-	svc := NewOrderService(ms, mo, mc)
+	svc := service.NewOrderService(ms, mo, mc)
 
 	cart := &model.Cart{Items: []model.CartItem{{ProductID: 1, Quantity: 2}, {ProductID: 2, Quantity: 1}}}
 	ord, err := svc.Checkout(1, cart)
@@ -108,7 +109,7 @@ func TestOrderService_Checkout_Success(t *testing.T) {
 func TestOrderService_Checkout_RollbackOnInsufficientStock(t *testing.T) {
 	ms := &mockStockRepo{fail: map[int64]error{2: ports.ErrInsufficientStock}}
 	mo := &mockOrderRepo{}
-	svc := NewOrderService(ms, mo, nil)
+	svc := service.NewOrderService(ms, mo, nil)
 
 	cart := &model.Cart{Items: []model.CartItem{{ProductID: 1, Quantity: 1}, {ProductID: 2, Quantity: 1}}}
 	_, err := svc.Checkout(1, cart)
@@ -126,7 +127,7 @@ func TestOrderService_Checkout_RollbackOnInsufficientStock(t *testing.T) {
 func TestOrderService_Concurrency_InMemoryRepo(t *testing.T) {
 	r := repo.NewInMemoryRepo()
 	p, _ := r.Create(&model.Product{Name: "P", Price: 10, Stock: 5})
-	svc := NewOrderService(r, nil, nil)
+	svc := service.NewOrderService(r, nil, nil)
 	cart := &model.Cart{Items: []model.CartItem{{ProductID: p.ID, Quantity: 1}}}
 
 	var wg sync.WaitGroup
